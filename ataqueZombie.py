@@ -4,14 +4,22 @@
 #trabajoders se mueven a la salida y los zombies se mueven aleatoriamente e infectan personas
 
 import pygame
-import math
 from queue import PriorityQueue
+import time
 import random
+from random  import randrange
 
 
 WIDTH = 600
 ROWS = 20
 WIN = pygame.display.set_mode((WIDTH, WIDTH))
+GRID = None
+EXITS = []
+iteration_count = 1
+zombie_count = 0
+humans_count = 20
+saved_humans = 0
+
 pygame.display.set_caption("Ataque zombie en Atomic Labs")
 
 RED = (255, 0, 0)       #close
@@ -35,6 +43,10 @@ class Node:
         self.neighbors = []
         self.width = width
         self.total_rows = total_rows
+        self.path = []
+        self.infected = False
+        self.time_for_zombie = 2
+        self.just_moved = False
     
     def get_pos(self):
         return self.row, self.col
@@ -54,16 +66,17 @@ class Node:
     def is_window(self):
         return self.color == ORANGE
     
-    def is_close(self):
-        return self.color == RED
-    
     def is_open(self):
         return self.color == YELLOW
+
+    def is_infected(self):
+        return self.infected
     
     def make_wall(self):
         self.color = BLACK
     
     def make_zombie(self):
+        self.make_infected()
         self.color = GREEN
     
     def make_human(self):
@@ -81,34 +94,150 @@ class Node:
     def make_window(self):
         self.color = ORANGE
     
+    def make_path(self):
+        self.color = PURPLE
+    
+    def make_infected(self):
+        self.infected = True
+
+    def check_if_already_zombie(self):
+        global zombie_count
+        global humans_count
+        if self.time_for_zombie == 0:
+            self.make_zombie()
+            zombie_count += 1
+            humans_count -= 1
+            return True
+        else:
+            self.time_for_zombie -= 1
+            return False
+    
+    def set_time_for_zombie(self, x):
+        self.time_for_zombie = x
+    
+    def pass_infection(self, node):
+        node.make_infected()
+        node.set_time_for_zombie(self.time_for_zombie)
+
+    def reset(self):
+        self.color = WHITE
+        self.time_for_zombie = 2
+        self.infected = False
+        self.path = []
+        self.just_moved = False
+
+    def set_path(self,path):
+        self.path = path
+
+    def add_to_path(self,node):
+        self.path.insert(0,node)
+
+    def get_neighbors(self):
+        return self.neighbors
+
+    def just_move_last_iteration(self):
+        self.just_moved = True
+    
+    def zombie_attack(self):
+        self.update_neighbors(GRID)
+        for neighbor in self.neighbors:
+            if neighbor.is_human() and not neighbor.is_infected():
+                neighbor.make_infected()
+                print(f"Human infected at x: {neighbor.get_pos()[0]}, y: {neighbor.get_pos()[1]}")
+
+    def move(self):
+        if self.just_moved:
+            self.just_moved = False
+            return
+        
+        if self.is_human():
+            if self.is_infected():
+                if self.check_if_already_zombie():
+                    return
+            
+            global saved_humans
+            global humans_count       
+            if self in EXITS:
+                saved_humans += 1
+                humans_count -= 1
+                print(f"Human saved at x: {self.get_pos()[0]}, y: {self.get_pos()[1]}")
+                self.reset()
+                self.make_exit()
+                return
+
+            if (len(self.path) == 0):
+                print(f"Human saved at x: {self.get_pos()[0]}, y: {self.get_pos()[1]}")
+                saved_humans += 1
+                humans_count -= 1
+                self.reset()
+                return
+            
+            
+            if (len(self.path)> 2):
+                if not self.path[1].is_human() and not self.path[1].is_zombie():
+                    self.path.pop(0)
+            if not self.path[0].is_human() and not self.path[0].is_zombie():
+                new_position = self.path.pop(0)
+                new_position.set_path(self.path)
+                new_position.make_human()
+                new_position.just_move_last_iteration()
+                if self.is_infected():
+                    new_position.make_infected()
+                    new_position.set_time_for_zombie(self.time_for_zombie)
+                self.reset()
+        
+        elif self.is_zombie():
+            self.zombie_attack()
+            steps = 0
+            new_position = self
+            last_position = self
+
+            while steps != 4:
+                new_position.update_neighbors(GRID)
+                move = randrange(0, len(new_position.neighbors))
+                new_position_temp = new_position.neighbors[move]
+                if not new_position_temp.is_human() and not new_position_temp == last_position:
+                    steps += 1
+                    new_position.reset()
+                    new_position = new_position_temp
+
+            new_position.make_zombie()
+            new_position.just_move_last_iteration()
+            new_position.zombie_attack()
+
     def draw(self, win):
         pygame.draw.rect(win, self.color, (self.x, self.y, self.width, self.width))
     
     def update_neighbors(self, grid):
         self.neighbors = []
-        if self.row < self.total_rows - 1 and not grid[self.row + 1][self.col].is_wall(): # MOVING DOWN
+        if self.row < self.total_rows - 1 and not grid[self.row + 1][self.col].is_wall() and not grid[self.row + 1][self.col].is_window() and not grid[self.row + 1][self.col].is_zombie(): # MOVING DOWN
             self.neighbors.append(grid[self.row + 1][self.col])
 
-        if self.row > 0 and not grid[self.row - 1][self.col].is_wall(): # UP
+        if self.row > 0 and not grid[self.row - 1][self.col].is_wall() and not grid[self.row - 1][self.col].is_window() and not grid[self.row - 1][self.col].is_zombie(): # UP
             self.neighbors.append(grid[self.row - 1][self.col])
 
-        if self.col < self.total_rows - 1 and not grid[self.row][self.col + 1].is_wall(): # RIGHT
+        if self.col < self.total_rows - 1 and not grid[self.row][self.col + 1].is_wall() and not grid[self.row][self.col + 1].is_window() and not grid[self.row][self.col + 1].is_zombie(): # RIGHT
             self.neighbors.append(grid[self.row][self.col + 1])
 
-        if self.col > 0 and not grid[self.row][self.col - 1].is_wall(): # LEFT
+        if self.col > 0 and not grid[self.row][self.col - 1].is_wall() and not grid[self.row][self.col - 1].is_window() and not grid[self.row][self.col - 1].is_zombie(): # LEFT
             self.neighbors.append(grid[self.row][self.col - 1])
 
 #Create the rows and nodes
 def make_grid(rows, width):
-    zombie_count = 0
-    zombie_one = zombie_spawn_location()
-    zombie_two = zombie_spawn_location()
+    global zombie_count
+    zombie_one = 0
+    zombie_two = 0
+    while zombie_one == zombie_two:
+        zombie_one = zombie_spawn_location()
+        zombie_two = zombie_spawn_location()
     grid = []
     gap = width // rows
+    global EXITS
     for i in range(rows):
         grid.append([])
         for j in range(rows):
             node = Node(i, j, gap, rows)
+            
             # Make the external walls
             if i == 0 or j == 0 or i == rows - 1 or j == rows - 1:
                 node.make_wall()
@@ -124,7 +253,7 @@ def make_grid(rows, width):
             # Make the exit
             if i == rows - 1 and (j == 18 or j == 17 or j == 16 or j == 15 ):
                 node.make_exit()
-            grid[i].append(node)
+                EXITS.append(node)
 
             # Make humans
             if check_if_human(i, j):
@@ -135,8 +264,9 @@ def make_grid(rows, width):
                 if i == zombie_one or i == zombie_two:
                     zombie_count += 1
                     node.make_zombie()
+                    print(f"Zombie enter from window x: {i}, y: {j}")
 
-
+            grid[i].append(node)
             
     return grid 
 
@@ -185,14 +315,13 @@ def h(p1, p2):
     x2, y2 = p2
     return abs(x1 - x2) + abs(y1 - y2)
 
-def recontruct_path(came_from, current, draw):
+def recontruct_path(start, came_from, current):
     while current in came_from:
         current = came_from[current]
-        current.make_path()
-        draw()
+        start.add_to_path(current)
 
 #A* Pathfindig algorithm 
-def algorithm(draw, grid, start, end):
+def algorithm(grid, start, end):
     count = 0
     open_set = PriorityQueue()
     open_set.put((0, count, start))
@@ -213,9 +342,7 @@ def algorithm(draw, grid, start, end):
         open_set_hash.remove(current)
 
         if current == end:
-            recontruct_path(came_from, end, draw)
-            end.make_end()
-            start.make_start()
+            recontruct_path(start, came_from, end)
             return True        # Make path
 
         for neighbor in current.neighbors:
@@ -229,25 +356,49 @@ def algorithm(draw, grid, start, end):
                     count += 1
                     open_set.put((f_score[neighbor], count, neighbor))
                     open_set_hash.add(neighbor)
-                    neighbor.make_open()
-        
-        draw()
-
-        if current != start:
-            current.make_close()
 
     return False
 
 
 def main(win, width):
+    global GRID
+    name = "ATAQUE ZOMBIE EN ATOMIC LABS"
+    print(f"\n{name:*^60}")
     grid = make_grid(ROWS, width)
+    GRID = grid
 
+    for row in grid:
+        for node in row:
+            node.update_neighbors(grid)
+
+    for row in grid:
+        for node in row:
+            exit = randrange(0, len(EXITS))
+            if node.is_human():
+                algorithm(grid, node, EXITS[exit])
+                
     run = True
-    while run:
+    global iteration_count
+    file = open("InfoAtaqueZombie.txt", "w+")
+    while humans_count > 0 and run:
+        time.sleep(1)  #Aquí se puede cambiar la velocidad con la que se ve cada Frame
         draw(win, grid, ROWS, width)
+        
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
+
+        for row in grid:
+            for node in row:
+                if node.is_human() or node.is_zombie():
+                    node.move()
+        
+        file.write(f"\nIteration num: {iteration_count} | Zombies: {zombie_count} | Humans at the office: {humans_count} | Humans saved: {saved_humans}")
+        iteration_count += 1
+
+    print(f"Iteration num: {iteration_count} | Zombies: {zombie_count} | Humans at the office: {humans_count} | Humans saved: {saved_humans}")            
+    file.close()
     pygame.quit()
 
-main(WIN, WIDTH)
+if __name__ == '__main__':
+    main(WIN, WIDTH)

@@ -1,0 +1,26 @@
+
+Iteration num: 1 | Zombies: 2 | Humans at the office: 20 | Humans saved: 0
+Iteration num: 2 | Zombies: 2 | Humans at the office: 20 | Humans saved: 0
+Iteration num: 3 | Zombies: 3 | Humans at the office: 19 | Humans saved: 0
+Iteration num: 4 | Zombies: 4 | Humans at the office: 17 | Humans saved: 1
+Iteration num: 5 | Zombies: 4 | Humans at the office: 16 | Humans saved: 2
+Iteration num: 6 | Zombies: 4 | Humans at the office: 16 | Humans saved: 2
+Iteration num: 7 | Zombies: 5 | Humans at the office: 15 | Humans saved: 2
+Iteration num: 8 | Zombies: 5 | Humans at the office: 13 | Humans saved: 4
+Iteration num: 9 | Zombies: 5 | Humans at the office: 11 | Humans saved: 6
+Iteration num: 10 | Zombies: 5 | Humans at the office: 10 | Humans saved: 7
+Iteration num: 11 | Zombies: 5 | Humans at the office: 9 | Humans saved: 8
+Iteration num: 12 | Zombies: 5 | Humans at the office: 8 | Humans saved: 9
+Iteration num: 13 | Zombies: 5 | Humans at the office: 7 | Humans saved: 10
+Iteration num: 14 | Zombies: 5 | Humans at the office: 6 | Humans saved: 11
+Iteration num: 15 | Zombies: 5 | Humans at the office: 5 | Humans saved: 12
+Iteration num: 16 | Zombies: 5 | Humans at the office: 5 | Humans saved: 12
+Iteration num: 17 | Zombies: 5 | Humans at the office: 4 | Humans saved: 13
+Iteration num: 18 | Zombies: 5 | Humans at the office: 4 | Humans saved: 13
+Iteration num: 19 | Zombies: 5 | Humans at the office: 3 | Humans saved: 14
+Iteration num: 20 | Zombies: 5 | Humans at the office: 3 | Humans saved: 14
+Iteration num: 21 | Zombies: 5 | Humans at the office: 2 | Humans saved: 15
+Iteration num: 22 | Zombies: 5 | Humans at the office: 2 | Humans saved: 15
+Iteration num: 23 | Zombies: 5 | Humans at the office: 1 | Humans saved: 16
+Iteration num: 24 | Zombies: 5 | Humans at the office: 1 | Humans saved: 16
+Iteration num: 25 | Zombies: 5 | Humans at the office: 0 | Humans saved: 17
